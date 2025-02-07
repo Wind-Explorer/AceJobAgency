@@ -1,8 +1,10 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.RegularExpressions;
 using AceJobAgency.Data;
 using AceJobAgency.Entities;
+using AceJobAgency.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -25,8 +27,13 @@ namespace AceJobAgency.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(User user)
         {
-            bool emailExists = _context.Users.Any(u => u.Email == user.Email);
-            bool nricExists = _context.Users.Any(u =>
+            if (!AccountManagement.IsPasswordComplex(user.Password))
+            {
+                return BadRequest("Password must be at least 12 characters long and include uppercase, lowercase, number, and special character.");
+            }
+            
+            var emailExists = _context.Users.Any(u => u.Email == user.Email);
+            var nricExists = _context.Users.Any(u =>
                 u.NationalRegistrationIdentityCardNumber == user.NationalRegistrationIdentityCardNumber);
             if (emailExists || nricExists)
             {
