@@ -113,6 +113,11 @@ namespace AceJobAgency.Controllers
             {
                 return BadRequest("Current password is incorrect.");
             }
+            
+            if (!AccountManagement.IsPasswordComplex(request.NewPassword))
+            {
+                return BadRequest("Password must be at least 12 characters long and include uppercase, lowercase, number, and special character.");
+            }
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             user.UpdatedAt = DateTime.Now;
