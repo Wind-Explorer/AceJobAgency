@@ -1,7 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Text.RegularExpressions;
 using AceJobAgency.Data;
 using AceJobAgency.Entities;
 using AceJobAgency.Utilities;
@@ -17,11 +16,13 @@ namespace AceJobAgency.Controllers
     {
         private readonly DataContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IEncryptionService _encryptionService;
 
-        public UserController(DataContext context, IConfiguration configuration)
+        public UserController(DataContext context, IConfiguration configuration, IEncryptionService encryptionService)
         {
             _context = context;
             _configuration = configuration;
+            _encryptionService = encryptionService;
         }
 
         [HttpPost("register")]
@@ -32,9 +33,10 @@ namespace AceJobAgency.Controllers
                 return BadRequest("Password must be at least 12 characters long and include uppercase, lowercase, number, and special character.");
             }
             
+            var encryptedNric = _encryptionService.Encrypt(user.NationalRegistrationIdentityCardNumber);
+            
             var emailExists = _context.Users.Any(u => u.Email == user.Email);
-            var nricExists = _context.Users.Any(u =>
-                u.NationalRegistrationIdentityCardNumber == user.NationalRegistrationIdentityCardNumber);
+            var nricExists = _context.Users.Any(u => u.NationalRegistrationIdentityCardNumber == encryptedNric);
             if (emailExists || nricExists)
             {
                 return BadRequest("User with the same email or NRIC already exists.");
@@ -43,10 +45,23 @@ namespace AceJobAgency.Controllers
             user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
             user.Id = Guid.NewGuid().ToString();
             user.IsActive = 1;
+            user.NationalRegistrationIdentityCardNumber = encryptedNric;
 
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
-            return Ok(user);
+
+            var response = new
+            {
+                user.Id,
+                user.Email,
+                NationalRegistrationIdentityCardNumber = _encryptionService.Decrypt(user.NationalRegistrationIdentityCardNumber),
+                user.FirstName,
+                user.LastName,
+                user.DateOfBirth,
+                user.WhoAmI,
+                user.ResumeName,
+            };
+            return Ok(response);
         }
 
         [HttpPost("login")]
@@ -72,7 +87,20 @@ namespace AceJobAgency.Controllers
             {
                 return NotFound();
             }
-            return Ok(user);
+
+            var decryptedNric = _encryptionService.Decrypt(user.NationalRegistrationIdentityCardNumber);
+            var response = new
+            {
+                user.Id,
+                user.Email,
+                NationalRegistrationIdentityCardNumber = decryptedNric,
+                user.FirstName,
+                user.LastName,
+                user.DateOfBirth,
+                user.WhoAmI,
+                user.ResumeName,
+            };
+            return Ok(response);
         }
 
         [Authorize]

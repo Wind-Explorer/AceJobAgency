@@ -1,5 +1,6 @@
 using System.Text;
 using AceJobAgency.Data;
+using AceJobAgency.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -59,6 +60,8 @@ builder.Services.AddSwaggerGen(options =>
         { securityScheme, new List<string>() }
     });
 });
+
+builder.Services.AddScoped<IEncryptionService, AesEncryptionService>();
 
 var app = builder.Build();
 

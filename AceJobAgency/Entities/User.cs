@@ -20,7 +20,7 @@ namespace AceJobAgency.Entities
         public required int Gender { get; set; }
 
         [Required]
-        [StringLength(9, MinimumLength = 9)]
+        [StringLength(255)]
         public required string NationalRegistrationIdentityCardNumber { get; set; }
 
         [Required]
