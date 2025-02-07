@@ -1,4 +1,5 @@
-﻿using AceJobAgency.Data;
+﻿using System.Diagnostics;
+using AceJobAgency.Data;
 using AceJobAgency.Entities;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,14 +18,15 @@ namespace AceJobAgency.Controllers
                 return BadRequest("User with the same email already exists.");
             }
 
-            string passwordHash = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(user.Password);
 
             user.Password = passwordHash;
-            user.Id = Guid.NewGuid().ToString();
+            var userId = Guid.NewGuid().ToString();
+            user.Id = userId;
 
             await context.Users.AddAsync(user);
             await context.SaveChangesAsync();
-            return Ok();
+            return Ok(user);
         }
     }
 }
