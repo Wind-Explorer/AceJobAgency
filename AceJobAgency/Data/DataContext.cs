@@ -12,7 +12,7 @@ namespace AceJobAgency.Data
             "DefaultConnection");
             if (connectionString != null)
             {
-                optionsBuilder.UseMySQL(connectionString);
+                optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             }
         }
         public DbSet<User> Users { get; set; }

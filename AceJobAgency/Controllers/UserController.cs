@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using AceJobAgency.Data;
+﻿using AceJobAgency.Data;
 using AceJobAgency.Entities;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,8 +11,12 @@ namespace AceJobAgency.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(User user)
         {
-            var userExists = context.Users.Any(u => u.Email == user.Email);
-            if (userExists)
+            var userEmailExists = context.Users.Any(u => u.Email == user.Email);
+            var userNationalRegistrationIdentityCardNumberExists = context.Users.Any(
+                u => u.NationalRegistrationIdentityCardNumber
+                     == user.NationalRegistrationIdentityCardNumber
+                );
+            if (userEmailExists || userNationalRegistrationIdentityCardNumberExists)
             {
                 return BadRequest("User with the same email already exists.");
             }
@@ -23,6 +26,7 @@ namespace AceJobAgency.Controllers
             user.Password = passwordHash;
             var userId = Guid.NewGuid().ToString();
             user.Id = userId;
+            user.IsActive = 1;
 
             await context.Users.AddAsync(user);
             await context.SaveChangesAsync();
