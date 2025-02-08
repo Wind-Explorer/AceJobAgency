@@ -1,15 +1,26 @@
 import {
   Button,
   Link,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
   Navbar,
   NavbarBrand,
   NavbarContent,
   NavbarItem,
+  useDisclosure,
 } from "@heroui/react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import SignupView from "./SignupView";
+import LoginView from "./LoginView";
 
 export default function NavigationBar() {
   const navigate = useNavigate();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [isSignup, setIsSignup] = useState(false);
 
   return (
     <Navbar className="border-b-[1px] border-neutral-500/25">
@@ -32,7 +43,8 @@ export default function NavigationBar() {
         <NavbarItem className="hidden lg:flex">
           <Button
             onPress={() => {
-              navigate("/login");
+              setIsSignup(false);
+              onOpen();
             }}
             variant="light"
           >
@@ -42,7 +54,8 @@ export default function NavigationBar() {
         <NavbarItem>
           <Button
             onPress={() => {
-              navigate("/signup");
+              setIsSignup(true);
+              onOpen();
             }}
             variant="bordered"
           >
@@ -50,6 +63,32 @@ export default function NavigationBar() {
           </Button>
         </NavbarItem>
       </NavbarContent>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+        <ModalContent>
+          {() => (
+            <>
+              <ModalHeader />
+              <ModalBody>
+                {isSignup ? (
+                  <SignupView
+                    onLogin={() => {
+                      setIsSignup(false);
+                    }}
+                    email=""
+                  />
+                ) : (
+                  <LoginView
+                    onSignup={() => {
+                      setIsSignup(true);
+                    }}
+                  />
+                )}
+              </ModalBody>
+              <ModalFooter />
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </Navbar>
   );
 }
