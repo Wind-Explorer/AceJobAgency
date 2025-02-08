@@ -17,6 +17,8 @@ namespace AceJobAgency.Controllers
         private readonly DataContext _context;
         private readonly IConfiguration _configuration;
         private readonly IEncryptionService _encryptionService;
+        
+        private readonly string _serverPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "resumes");
 
         public UserController(DataContext context, IConfiguration configuration, IEncryptionService encryptionService)
         {
@@ -188,6 +190,91 @@ namespace AceJobAgency.Controllers
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+    
+        [Authorize]
+        [HttpPost("upload-resume")]
+        public async Task<IActionResult> UploadResume(IFormFile? file)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId && u.IsActive == 1);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file uploaded.");
+            }
+
+            var fileName = $"{userId}_{Path.GetFileName(file.FileName)}";
+            var filePath = Path.Combine(_serverPath, fileName);
+
+            // Ensure the directory exists
+            if (!Directory.Exists(_serverPath))
+            {
+                Directory.CreateDirectory(_serverPath);
+            }
+
+            // Validate file type and size
+            var allowedExtensions = new[] { ".pdf", ".doc", ".docx" };
+            var extension = Path.GetExtension(file.FileName).ToLower();
+            if (!allowedExtensions.Contains(extension))
+            {
+                return BadRequest("Unsupported file type. Only PDF and DOC/DOCX files are allowed.");
+            }
+
+            if (file.Length > 5 * 1024 * 1024) // 5MB
+            {
+                return BadRequest("File size exceeds the maximum limit of 5MB.");
+            }
+
+            // Save file to server storage
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            user.ResumeName = fileName;
+            user.UpdatedAt = DateTime.Now;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { ResumeName = user.ResumeName });
+        }
+
+        [Authorize]
+        [HttpGet("resume")]
+        public IActionResult GetResume()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId && u.IsActive == 1);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (string.IsNullOrEmpty(user.ResumeName))
+            {
+                return NotFound("No resume found.");
+            }
+
+            var filePath = Path.Combine(_serverPath, user.ResumeName);
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound("Resume file not found.");
+            }
+
+            var mimeType = "application/octet-stream";
+            var extension = Path.GetExtension(filePath).ToLower();
+            if (extension == ".pdf") mimeType = "application/pdf";
+            else if (extension == ".doc" || extension == ".docx") mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            return new FileStreamResult(fileStream, mimeType) { FileDownloadName = user.ResumeName };
         }
     }
 
