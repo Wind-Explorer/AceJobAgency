@@ -12,6 +12,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddDbContext<DataContext>();
 
+// Add CORS services
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(corsBuilder =>
+    {
+        corsBuilder.WithOrigins("http://localhost:1420")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 // Authentication
 var secret = builder.Configuration.GetValue<string>("Authentication:Secret");
 if (string.IsNullOrEmpty(secret))
@@ -71,6 +82,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors();
 
 app.UseHttpsRedirection();
 
