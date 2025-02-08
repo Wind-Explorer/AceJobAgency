@@ -3,7 +3,6 @@ import { IconMail, IconLock } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import http from "../http";
-import { useNavigate } from "react-router-dom";
 
 export default function SignupView({
   onLogin,
@@ -20,8 +19,6 @@ export default function SignupView({
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
-  const navigate = useNavigate();
 
   const validatePassword = (password: string): boolean => {
     const passwordComplexityRegex =
@@ -78,8 +75,9 @@ export default function SignupView({
         throw new Error("Failed to sign up");
       }
 
-      toast.success("User signed up successfully");
-      navigate("/");
+      toast.success("Welcome to Ace Job, " + firstName + "!", {
+        onClose: onLogin,
+      });
     } catch (error) {
       toast.error((error as any).response?.data || "Error during signup");
     }
