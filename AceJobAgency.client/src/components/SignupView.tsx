@@ -1,6 +1,7 @@
 import { Input, Button, Link, Select, SelectItem } from "@heroui/react";
 import { IconMail, IconLock } from "@tabler/icons-react";
 import { useState } from "react";
+import { toast } from "react-toastify";
 import http from "../http";
 import { useNavigate } from "react-router-dom";
 
@@ -16,13 +17,47 @@ export default function SignupView({
   const [lastName, setLastName] = useState("");
   const [nric, setNric] = useState("");
   const [gender, setGender] = useState("0");
-  const dateOfBirthInput = document.getElementById("dateOfBirthInput");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const navigate = useNavigate();
 
+  const validatePassword = (password: string): boolean => {
+    const passwordComplexityRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/;
+    return passwordComplexityRegex.test(password);
+  };
+
+  const validateFields = () => {
+    if (
+      !firstName ||
+      !lastName ||
+      !emailValue ||
+      !nric ||
+      !dateOfBirth ||
+      !password ||
+      !confirmPassword
+    ) {
+      toast.error("All fields are required.");
+      return false;
+    }
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      return false;
+    }
+    if (!validatePassword(password)) {
+      toast.error(
+        "Password must be at least 12 characters long and include uppercase, lowercase, number, and special character."
+      );
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async () => {
+    if (!validateFields()) return;
+
     const user = {
       id: "",
       firstName,
@@ -31,7 +66,7 @@ export default function SignupView({
       nationalRegistrationIdentityCardNumber: nric,
       email: emailValue,
       password,
-      dateOfBirth: new Date((dateOfBirthInput as any).value),
+      dateOfBirth: new Date(dateOfBirth),
       resumeName: "",
       whoAmI: "",
     };
@@ -39,14 +74,14 @@ export default function SignupView({
     try {
       const response = await http.post("/User/register", user);
 
-      if (response.status != 200) {
+      if (response.status !== 200) {
         throw new Error("Failed to sign up");
       }
 
-      // Handle successful signup (e.g., show a message, redirect, etc.)
-      console.log("User signed up successfully");
+      toast.success("User signed up successfully");
+      navigate("/");
     } catch (error) {
-      console.error("Error during signup:", error);
+      toast.error((error as any).response?.data || "Error during signup");
     }
   };
 
@@ -91,7 +126,8 @@ export default function SignupView({
           <input
             type="date"
             className="rounded-xl px-4 transition-colors dark:bg-neutral-800 dark:hover:bg-neutral-700"
-            id="dateOfBirthInput"
+            value={dateOfBirth}
+            onChange={(e) => setDateOfBirth(e.target.value)}
           />
         </div>
         <Input
