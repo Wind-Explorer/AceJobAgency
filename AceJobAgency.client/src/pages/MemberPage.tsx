@@ -138,10 +138,10 @@ export default function MemberPage() {
             </div>
             <div className="flex flex-col gap-2">
               <p>Who am I</p>
-              <Card className="p-4 bg-white dark:bg-black h-full min-w-96">
+              <Card className="bg-white dark:bg-black h-full max-h-[352px] min-w-96">
                 {userProfile.whoAmI.length > 0 ? (
                   <Markdown
-                    className="prose dark:prose-invert prose-neutral overflow-auto w-full h-full"
+                    className="prose dark:prose-invert prose-neutral overflow-auto w-full h-full p-6"
                     remarkPlugins={[remarkGfm]}
                   >
                     {userProfile.whoAmI}

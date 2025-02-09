@@ -40,7 +40,7 @@ namespace AceJobAgency.Entities
         [MaxLength(128)]
         public required string ResumeName { get; set; }
 
-        [MaxLength(255)]
+        [MaxLength(2048)]
         public string WhoAmI { get; set; } = string.Empty;
 
         public int IsActive { get; set; } = 1;
