@@ -2,7 +2,7 @@ import { Input, Button, Link, Select, SelectItem } from "@heroui/react";
 import { IconMail, IconLock } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
-import http from "../http";
+import http, { login } from "../http";
 
 export default function SignupView({
   onLogin,
@@ -19,10 +19,11 @@ export default function SignupView({
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [signupEnabled, setSignupEnabled] = useState(true);
 
   const validatePassword = (password: string): boolean => {
     const passwordComplexityRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/;
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])[A-Za-z\d@$!%*?&\\]{12,}$/;
     return passwordComplexityRegex.test(password);
   };
 
@@ -74,9 +75,19 @@ export default function SignupView({
       if (response.status !== 200) {
         throw new Error("Failed to sign up");
       }
-
+      setSignupEnabled(false);
       toast.success("Welcome to Ace Job, " + firstName + "!", {
-        onClose: onLogin,
+        onClose: () => {
+          http
+            .post("/User/login", { email: emailValue, password: password })
+            .then((response) => {
+              if (response.status === 200) {
+                login(response.data.token);
+              } else {
+                toast.error("Failed to login");
+              }
+            });
+        },
       });
     } catch (error) {
       toast.error((error as any).response?.data || "Error during signup");
@@ -144,7 +155,12 @@ export default function SignupView({
         />
       </div>
       <div className="flex flex-col gap-4 w-full">
-        <Button color="primary" className="w-full" onPress={handleSubmit}>
+        <Button
+          color="primary"
+          className="w-full"
+          onPress={handleSubmit}
+          isDisabled={!signupEnabled}
+        >
           Sign up
         </Button>
         <div className="flex flex-row gap-2 w-full justify-center *:my-auto">

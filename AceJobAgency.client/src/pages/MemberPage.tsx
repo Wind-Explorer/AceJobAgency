@@ -147,7 +147,9 @@ export default function MemberPage() {
                     {userProfile.whoAmI}
                   </Markdown>
                 ) : (
-                  "You have not wrote anything about yourself."
+                  <p className="p-6">
+                    You have not wrote anything about yourself.
+                  </p>
                 )}
               </Card>
             </div>
