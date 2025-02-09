@@ -16,11 +16,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SignupView from "./SignupView";
 import LoginView from "./LoginView";
+import { getAccessToken } from "../http";
 
 export default function NavigationBar() {
   const navigate = useNavigate();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [isSignup, setIsSignup] = useState(false);
+  const accessToken = getAccessToken();
 
   return (
     <Navbar className="border-b-[1px] border-neutral-500/25">
@@ -39,30 +41,32 @@ export default function NavigationBar() {
           />
         </Link>
       </NavbarBrand>
-      <NavbarContent justify="end">
-        <NavbarItem className="hidden lg:flex">
-          <Button
-            onPress={() => {
-              setIsSignup(false);
-              onOpen();
-            }}
-            variant="light"
-          >
-            Login
-          </Button>
-        </NavbarItem>
-        <NavbarItem>
-          <Button
-            onPress={() => {
-              setIsSignup(true);
-              onOpen();
-            }}
-            variant="bordered"
-          >
-            Sign Up
-          </Button>
-        </NavbarItem>
-      </NavbarContent>
+      {!accessToken && (
+        <NavbarContent justify="end">
+          <NavbarItem className="hidden lg:flex">
+            <Button
+              onPress={() => {
+                setIsSignup(false);
+                onOpen();
+              }}
+              variant="light"
+            >
+              Login
+            </Button>
+          </NavbarItem>
+          <NavbarItem>
+            <Button
+              onPress={() => {
+                setIsSignup(true);
+                onOpen();
+              }}
+              variant="bordered"
+            >
+              Sign Up
+            </Button>
+          </NavbarItem>
+        </NavbarContent>
+      )}
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
         <ModalContent>
           {() => (

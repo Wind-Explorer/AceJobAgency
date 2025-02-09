@@ -9,14 +9,21 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@heroui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LoginView from "../components/LoginView";
 import SignupView from "../components/SignupView";
+import { getAccessToken } from "../http";
 
 export default function HomePage() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [isSignup, setIsSignup] = useState(false);
   const [emailValue, setEmailValue] = useState("");
+
+  useEffect(() => {
+    if (getAccessToken()) {
+      window.location.reload();
+    }
+  }, []);
 
   return (
     <div className="absolute inset-0 w-full h-full flex flex-col justify-center bg-indigo-500/10 dark:bg-indigo-500/20">

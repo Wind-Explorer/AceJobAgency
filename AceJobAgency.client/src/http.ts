@@ -41,4 +41,27 @@ http.interceptors.response.use(
   }
 );
 
+export function login(token: string) {
+  setAccessToken(token);
+  window.location.reload();
+}
+
+export function logout() {
+  clearAccessToken();
+  window.location.reload();
+}
+
+export function getAccessToken() {
+  return localStorage.getItem("accessToken");
+}
+
+function setAccessToken(token: string) {
+  clearAccessToken();
+  localStorage.setItem("accessToken", token);
+}
+
+function clearAccessToken() {
+  localStorage.clear();
+}
+
 export default http;
