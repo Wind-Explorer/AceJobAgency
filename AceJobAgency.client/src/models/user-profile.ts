@@ -4,6 +4,8 @@ export interface UserProfile {
   nationalRegistrationIdentityCardNumber: string;
   firstName: string;
   lastName: string;
+  gender: number;
+  password: string | undefined;
   dateOfBirth: string;
   whoAmI: string;
   resumeName: string;

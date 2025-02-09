@@ -98,6 +98,7 @@ namespace AceJobAgency.Controllers
                 NationalRegistrationIdentityCardNumber = decryptedNric,
                 user.FirstName,
                 user.LastName,
+                user.Gender,
                 user.DateOfBirth,
                 user.WhoAmI,
                 user.ResumeName,
@@ -120,7 +121,6 @@ namespace AceJobAgency.Controllers
             user.LastName = updatedUser.LastName;
             user.DateOfBirth = updatedUser.DateOfBirth;
             user.WhoAmI = updatedUser.WhoAmI;
-            user.ResumeName = updatedUser.ResumeName;
             user.UpdatedAt = DateTime.Now;
 
             _context.Users.Update(user);

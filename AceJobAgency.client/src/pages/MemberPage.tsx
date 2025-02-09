@@ -3,6 +3,8 @@ import http, { getAccessToken, logout } from "../http";
 import { useNavigate } from "react-router-dom";
 import { UserProfile } from "../models/user-profile";
 import { Button, Card, Divider, Input } from "@heroui/react";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function MemberPage() {
   const accessToken = getAccessToken();
@@ -56,10 +58,17 @@ export default function MemberPage() {
             </div>
             <div className="flex flex-col gap-2">
               <p>Who am I</p>
-              <Card className="p-4 bg-neutral-500/20 h-full">
-                {userProfile.whoAmI.length > 0
-                  ? userProfile.whoAmI
-                  : "You have not wrote anything about yourself."}
+              <Card className="p-4 bg-neutral-500/20 h-full min-w-96">
+                {userProfile.whoAmI.length > 0 ? (
+                  <Markdown
+                    className="prose dark:prose-invert prose-neutral overflow-auto w-full h-full"
+                    remarkPlugins={[remarkGfm]}
+                  >
+                    {userProfile.whoAmI}
+                  </Markdown>
+                ) : (
+                  "You have not wrote anything about yourself."
+                )}
               </Card>
             </div>
           </div>
@@ -68,7 +77,14 @@ export default function MemberPage() {
             <Button variant="light" color="danger" onPress={logout}>
               Log out
             </Button>
-            <Button color="primary">Edit profile</Button>
+            <Button
+              color="primary"
+              onPress={() => {
+                navigate("edit");
+              }}
+            >
+              Edit profile
+            </Button>
           </div>
         </Card>
       )}
