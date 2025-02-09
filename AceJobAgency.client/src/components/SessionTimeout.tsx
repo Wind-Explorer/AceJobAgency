@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 interface SessionTimeoutProps {
@@ -47,11 +47,7 @@ const SessionTimeout: React.FC<SessionTimeoutProps> = ({
     return () => clearInterval(interval);
   }, [lastActivityTime, timeout, onLogout, notified]);
 
-  return (
-    <>
-      <ToastContainer />
-    </>
-  );
+  return <></>;
 };
 
 export default SessionTimeout;

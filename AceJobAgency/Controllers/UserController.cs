@@ -70,10 +70,32 @@ namespace AceJobAgency.Controllers
         public IActionResult Login([FromBody] LoginRequest request)
         {
             var user = _context.Users.FirstOrDefault(u => u.Email == request.Email && u.IsActive == 1);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+            if (user == null)
             {
                 return Unauthorized("Invalid email or password.");
             }
+
+            if (user.IsLockedOut && user.LockoutEndTime > DateTime.Now)
+            {
+                return Unauthorized("Account is locked. Try again later.");
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+            {
+                user.FailedLoginAttempts++;
+                if (user.FailedLoginAttempts >= 5)
+                {
+                    user.IsLockedOut = true;
+                    user.LockoutEndTime = DateTime.Now.AddMinutes(1);
+                }
+                _context.SaveChanges();
+                return Unauthorized("Invalid email or password.");
+            }
+
+            user.FailedLoginAttempts = 0;
+            user.IsLockedOut = false;
+            user.LockoutEndTime = null;
+            _context.SaveChanges();
 
             var token = GenerateJwtToken(user);
             return Ok(new { token });
@@ -184,7 +206,7 @@ namespace AceJobAgency.Controllers
                     new Claim(ClaimTypes.NameIdentifier, user.Id),
                     new Claim(ClaimTypes.Email, user.Email)
                 ]),
-                Expires = DateTime.UtcNow.AddHours(2),
+                Expires = DateTime.UtcNow.AddMinutes(15),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key),
                                                             SecurityAlgorithms.HmacSha256Signature)
             };

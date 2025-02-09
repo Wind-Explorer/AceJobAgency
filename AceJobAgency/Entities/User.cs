@@ -50,5 +50,12 @@ namespace AceJobAgency.Entities
         
         [DataType(DataType.Date)]
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
+        public int FailedLoginAttempts { get; set; } = 0;
+        
+        public bool IsLockedOut { get; set; } = false;
+
+        [DataType(DataType.DateTime)]
+        public DateTime? LockoutEndTime { get; set; }
     }
 }

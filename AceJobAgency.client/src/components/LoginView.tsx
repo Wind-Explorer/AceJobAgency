@@ -27,8 +27,8 @@ export default function LoginView({ onSignup }: { onSignup: () => void }) {
     try {
       const response = await http.post("/User/login", loginRequest);
 
-      if (response.status !== 200) {
-        throw new Error("Login failed");
+      if (response.status === 401) {
+        throw new Error("Invalid email or password.");
       }
 
       const { token } = response.data;
