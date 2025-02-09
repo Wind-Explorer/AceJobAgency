@@ -16,6 +16,7 @@ export default function EditProfilePage() {
     const accessToken = getAccessToken();
     if (!accessToken) {
       navigate(-1);
+      return;
     }
     http.get("/User/profile").then((response) => {
       if (response.status !== 200) {

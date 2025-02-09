@@ -48,7 +48,7 @@ export function login(token: string) {
 
 export function logout() {
   clearAccessToken();
-  window.location.reload();
+  window.location.assign("/");
 }
 
 export function getAccessToken() {
