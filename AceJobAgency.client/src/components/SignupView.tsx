@@ -40,6 +40,11 @@ export default function SignupView({
       toast.error("All fields are required.");
       return false;
     }
+    const nricRegex = /^[A-Za-z][0-9]{7}[A-Za-z]$/;
+    if (!nricRegex.test(nric)) {
+      toast.error("Please enter a valid NRIC.");
+      return false;
+    }
     if (password !== confirmPassword) {
       toast.error("Passwords do not match.");
       return false;
@@ -61,8 +66,8 @@ export default function SignupView({
       firstName,
       lastName,
       gender: Number(gender),
-      nationalRegistrationIdentityCardNumber: nric,
-      email: emailValue,
+      nationalRegistrationIdentityCardNumber: nric.toUpperCase(),
+      email: emailValue.toLowerCase(),
       password,
       dateOfBirth: new Date(dateOfBirth),
       resumeName: "",
