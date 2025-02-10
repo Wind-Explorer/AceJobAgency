@@ -67,6 +67,7 @@ export default function LoginView({ onSignup }: { onSignup: () => void }) {
       </div>
       <div className="flex py-2 px-1 justify-between">
         <Checkbox
+          isDisabled
           classNames={{
             label: "text-small",
           }}

@@ -3,6 +3,7 @@ import { IconMail, IconLock } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import http, { login } from "../http";
+import PasswordComplexityIndicator from "./PasswordComplexityIndicator";
 
 export const validatePassword = (password: string): boolean => {
   const passwordComplexityRegex =
@@ -108,26 +109,30 @@ export default function SignupView({
       <div className="flex flex-col gap-2">
         <div className="flex flex-row gap-2">
           <Input
+            size="sm"
             label="First name"
             value={firstName}
             onValueChange={setFirstName}
           />
           <Input
+            size="sm"
             label="Last name"
             value={lastName}
             onValueChange={setLastName}
           />
         </div>
         <Input
+          size="sm"
           endContent={<IconMail />}
           label="Email"
           type="email"
           value={emailValue}
           onValueChange={setEmailValue}
         />
-        <Input label="NRIC" value={nric} onValueChange={setNric} />
+        <Input size="sm" label="NRIC" value={nric} onValueChange={setNric} />
         <div className="flex flex-row gap-2">
           <Select
+            size="sm"
             label="Gender"
             selectedKeys={[gender]}
             onChange={(e) => {
@@ -139,12 +144,13 @@ export default function SignupView({
           </Select>
           <input
             type="date"
-            className="rounded-xl px-4 transition-colors dark:bg-neutral-800 dark:hover:bg-neutral-700"
+            className="rounded-lg px-4 transition-colors dark:bg-neutral-800 dark:hover:bg-neutral-700"
             value={dateOfBirth}
             onChange={(e) => setDateOfBirth(e.target.value)}
           />
         </div>
         <Input
+          size="sm"
           endContent={<IconLock />}
           label="Password"
           type="password"
@@ -152,12 +158,14 @@ export default function SignupView({
           onValueChange={setPassword}
         />
         <Input
+          size="sm"
           endContent={<IconLock />}
           label="Confirm password"
           type="password"
           value={confirmPassword}
           onValueChange={setConfirmPassword}
         />
+        <PasswordComplexityIndicator password={password} />
       </div>
       <div className="flex flex-col gap-4 w-full">
         <Button
