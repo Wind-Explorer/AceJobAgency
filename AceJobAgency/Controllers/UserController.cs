@@ -70,6 +70,8 @@ namespace AceJobAgency.Controllers
         public IActionResult Login([FromBody] LoginRequest request)
         {
             var user = _context.Users.FirstOrDefault(u => u.Email == request.Email && u.IsActive == 1);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress!.ToString();
+
             if (user == null)
             {
                 return Unauthorized("Invalid email or password.");
@@ -77,6 +79,7 @@ namespace AceJobAgency.Controllers
 
             if (user.IsLockedOut && user.LockoutEndTime > DateTime.Now)
             {
+                new ActivityLogController(_context).LogUserActivity(user.Id, "Login rejected: Locked out", ipAddress);
                 return Unauthorized("Account is locked. Try again later.");
             }
 
@@ -87,8 +90,10 @@ namespace AceJobAgency.Controllers
                 {
                     user.IsLockedOut = true;
                     user.LockoutEndTime = DateTime.Now.AddMinutes(1);
+                    new ActivityLogController(_context).LogUserActivity(user.Id, "Account locked due to 5 consecutive failed attempts.", ipAddress);
                 }
                 _context.SaveChanges();
+                new ActivityLogController(_context).LogUserActivity(user.Id, "Login rejected: invalid password", ipAddress);
                 return Unauthorized("Invalid email or password.");
             }
 
@@ -98,6 +103,7 @@ namespace AceJobAgency.Controllers
             _context.SaveChanges();
 
             var token = GenerateJwtToken(user);
+            new ActivityLogController(_context).LogUserActivity(user.Id, "Login successful", ipAddress);
             return Ok(new { token });
         }
 
@@ -125,6 +131,8 @@ namespace AceJobAgency.Controllers
                 user.WhoAmI,
                 user.ResumeName,
             };
+            var ipAddress = HttpContext.Connection.RemoteIpAddress!.ToString();
+            new ActivityLogController(_context).LogUserActivity(user.Id, "Fetched user profile", ipAddress);
             return Ok(response);
         }
 
@@ -147,6 +155,8 @@ namespace AceJobAgency.Controllers
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
+            var ipAddress = HttpContext.Connection.RemoteIpAddress!.ToString();
+            new ActivityLogController(_context).LogUserActivity(user.Id, "Updated user profile", ipAddress);
             return Ok(user);
         }
 
@@ -154,6 +164,7 @@ namespace AceJobAgency.Controllers
         [HttpPut("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
+            var ipAddress = HttpContext.Connection.RemoteIpAddress!.ToString();
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var user = _context.Users.FirstOrDefault(u => u.Id == userId && u.IsActive == 1);
             if (user == null)
@@ -163,11 +174,13 @@ namespace AceJobAgency.Controllers
 
             if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.Password))
             {
+                new ActivityLogController(_context).LogUserActivity(user.Id, "Change password failed: Current password is incorrect", ipAddress);
                 return BadRequest("Current password is incorrect.");
             }
             
             if (!AccountManagement.IsPasswordComplex(request.NewPassword))
             {
+                new ActivityLogController(_context).LogUserActivity(user.Id, "Change password failed: Password not complex enough", ipAddress);
                 return BadRequest("Password must be at least 12 characters long and include uppercase, lowercase, number, and special character.");
             }
 
@@ -175,6 +188,7 @@ namespace AceJobAgency.Controllers
             user.UpdatedAt = DateTime.Now;
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
+            new ActivityLogController(_context).LogUserActivity(user.Id, "Change password successful", ipAddress);
             return Ok("Password updated successfully.");
         }
 
@@ -263,6 +277,9 @@ namespace AceJobAgency.Controllers
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
+            
+            var ipAddress = HttpContext.Connection.RemoteIpAddress!.ToString();
+            new ActivityLogController(_context).LogUserActivity(user.Id, "Updated user profile", ipAddress);
 
             return Ok(new { ResumeName = user.ResumeName });
         }
@@ -277,9 +294,12 @@ namespace AceJobAgency.Controllers
             {
                 return NotFound();
             }
+            
+            var ipAddress = HttpContext.Connection.RemoteIpAddress!.ToString();
 
             if (string.IsNullOrEmpty(user.ResumeName))
             {
+                new ActivityLogController(_context).LogUserActivity(user.Id, "Download resume failed: No resume found", ipAddress);
                 return NotFound("No resume found.");
             }
 
@@ -287,6 +307,7 @@ namespace AceJobAgency.Controllers
 
             if (!System.IO.File.Exists(filePath))
             {
+                new ActivityLogController(_context).LogUserActivity(user.Id, "Download resume failed: Resume file missing", ipAddress);
                 return NotFound("Resume file not found.");
             }
 
@@ -296,6 +317,7 @@ namespace AceJobAgency.Controllers
             else if (extension == ".doc" || extension == ".docx") mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            new ActivityLogController(_context).LogUserActivity(user.Id, "Download resume successful", ipAddress);
             return new FileStreamResult(fileStream, mimeType) { FileDownloadName = user.ResumeName };
         }
     }
