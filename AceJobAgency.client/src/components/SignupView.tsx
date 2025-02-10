@@ -4,6 +4,12 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import http, { login } from "../http";
 
+export const validatePassword = (password: string): boolean => {
+  const passwordComplexityRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])[A-Za-z\d@$!%*?&\\]{12,}$/;
+  return passwordComplexityRegex.test(password);
+};
+
 export default function SignupView({
   onLogin,
   email = "",
@@ -20,12 +26,6 @@ export default function SignupView({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [signupEnabled, setSignupEnabled] = useState(true);
-
-  const validatePassword = (password: string): boolean => {
-    const passwordComplexityRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])[A-Za-z\d@$!%*?&\\]{12,}$/;
-    return passwordComplexityRegex.test(password);
-  };
 
   const validateFields = () => {
     if (

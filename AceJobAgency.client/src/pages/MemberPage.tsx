@@ -2,15 +2,28 @@ import { useEffect, useState } from "react";
 import http, { getAccessToken, logout } from "../http";
 import { useNavigate } from "react-router-dom";
 import { UserProfile } from "../models/user-profile";
-import { Button, Card, Divider, Input } from "@heroui/react";
+import {
+  Button,
+  Card,
+  Divider,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  useDisclosure,
+} from "@heroui/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { IconDownload, IconUpload } from "@tabler/icons-react";
+import { IconDownload, IconEdit, IconUpload } from "@tabler/icons-react";
 import { toast } from "react-toastify";
+import ChangePasswordView from "../components/ChangePasswordView";
 
 export default function MemberPage() {
   const accessToken = getAccessToken();
   const navigate = useNavigate();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
@@ -137,7 +150,20 @@ export default function MemberPage() {
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <p>Who am I</p>
+              <div className="flex flex-row justify-between *:my-auto">
+                <p>Who am I</p>
+                <Button
+                  variant="flat"
+                  size="sm"
+                  className="text-md"
+                  startContent={<IconEdit size={18} />}
+                  onPress={() => {
+                    navigate("edit");
+                  }}
+                >
+                  Edit bio
+                </Button>
+              </div>
               <Card className="bg-white dark:bg-black h-full max-h-[352px] min-w-96">
                 {userProfile.whoAmI.length > 0 ? (
                   <Markdown
@@ -159,17 +185,25 @@ export default function MemberPage() {
             <Button variant="light" color="danger" onPress={logout}>
               Log out
             </Button>
-            <Button
-              color="primary"
-              onPress={() => {
-                navigate("edit");
-              }}
-            >
-              Edit profile
+            <Button variant="light" color="primary" onPress={onOpen}>
+              Change password
             </Button>
           </div>
         </Card>
       )}
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader />
+              <ModalBody>
+                <ChangePasswordView onClose={onClose} />
+              </ModalBody>
+              <ModalFooter />
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   );
 }
