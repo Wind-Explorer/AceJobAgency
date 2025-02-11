@@ -57,5 +57,13 @@ namespace AceJobAgency.Entities
 
         [DataType(DataType.DateTime)]
         public DateTime? LockoutEndTime { get; set; }
+
+        [DataType(DataType.Password)]
+        [MaxLength(128)]
+        public string PreviousPassword1 { get; set; } = string.Empty;
+
+        [DataType(DataType.Password)]
+        [MaxLength(128)]
+        public string PreviousPassword2 { get; set; } = string.Empty;
     }
 }

@@ -178,11 +178,28 @@ namespace AceJobAgency.Controllers
                 return BadRequest("Current password is incorrect.");
             }
             
+            if (BCrypt.Net.BCrypt.Verify(request.NewPassword, user.Password))
+            {
+                new ActivityLogController(_context).LogUserActivity(user.Id, "Change password failed: Tried changing to the same password", ipAddress);
+                return BadRequest("New password can't be the same as the old password.");
+            }
+            
             if (!AccountManagement.IsPasswordComplex(request.NewPassword))
             {
                 new ActivityLogController(_context).LogUserActivity(user.Id, "Change password failed: Password not complex enough", ipAddress);
                 return BadRequest("Password must be at least 12 characters long and include uppercase, lowercase, number, and special character.");
             }
+
+            if ((!string.IsNullOrEmpty(user.Password) && BCrypt.Net.BCrypt.Verify(request.NewPassword, user.Password)) ||
+                (!string.IsNullOrEmpty(user.PreviousPassword1) && BCrypt.Net.BCrypt.Verify(request.NewPassword, user.PreviousPassword1)) ||
+                (!string.IsNullOrEmpty(user.PreviousPassword2) && BCrypt.Net.BCrypt.Verify(request.NewPassword, user.PreviousPassword2)))
+            {
+                new ActivityLogController(_context).LogUserActivity(user.Id, "Change password failed: New password matches one of the previous passwords", ipAddress);
+                return BadRequest("New password cannot be one of the last two passwords.");
+            }
+
+            user.PreviousPassword2 = user.PreviousPassword1;
+            user.PreviousPassword1 = user.Password;
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             user.UpdatedAt = DateTime.Now;
