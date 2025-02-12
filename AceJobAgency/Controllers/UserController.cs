@@ -6,7 +6,10 @@ using AceJobAgency.Entities;
 using AceJobAgency.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OtpNet;
+using QRCoder;
 
 namespace AceJobAgency.Controllers
 {
@@ -101,6 +104,11 @@ namespace AceJobAgency.Controllers
             user.IsLockedOut = false;
             user.LockoutEndTime = null;
             _context.SaveChanges();
+
+            if (request.Verify)
+            {
+                return Ok();
+            }
 
             var token = GenerateJwtToken(user);
             new ActivityLogController(_context).LogUserActivity(user.Id, "Login successful", ipAddress);
@@ -337,10 +345,113 @@ namespace AceJobAgency.Controllers
             new ActivityLogController(_context).LogUserActivity(user.Id, "Download resume successful", ipAddress);
             return new FileStreamResult(fileStream, mimeType) { FileDownloadName = user.ResumeName };
         }
+        
+        private string GenerateBase32Secret()
+        {
+            var bytes = KeyGeneration.GenerateRandomKey(20);
+            var base32Secret = Base32Encoding.ToString(bytes);
+            return base32Secret;
+        }
+
+        // Generate a QR code as a data URL
+        private string GenerateQrCode(string otpauthUrl)
+        {
+            using var qrGenerator = new QRCodeGenerator();
+            using var qrCodeData = qrGenerator.CreateQrCode(otpauthUrl, QRCodeGenerator.ECCLevel.Q);
+            using var qrCode = new Base64QRCode(qrCodeData);
+            var qrCodeImage = qrCode.GetGraphic(20);
+            return $"data:image/png;base64,{qrCodeImage}";
+        }
+
+        [Authorize]
+        [HttpPost("enable-2fa")]
+        public async Task<IActionResult> Enable2FA()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == 1);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            var base32Secret = GenerateBase32Secret();
+            user.Secret = base32Secret;
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            var totp = new Totp(Base32Encoding.ToBytes(base32Secret));
+            var uriString = new OtpUri(OtpType.Totp, base32Secret, user.Email, "Ace Job Agency").ToString();
+            var qrCodeUrl = GenerateQrCode(uriString);
+
+            return Ok(new
+            {
+                qrCodeUrl,
+                secret = base32Secret
+            });
+        }
+
+        [Authorize]
+        [HttpPost("disable-2fa")]
+        public async Task<IActionResult> Disable2FA()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == 1);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            user.Secret = null;
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { status = "success", message = "2FA disabled" });
+        }
+
+        [HttpPost("verify-2fa")]
+        public async Task<IActionResult> Verify2FA([FromBody] Verify2FaRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == 1);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            if (string.IsNullOrEmpty(user.Secret))
+            {
+                return BadRequest("2FA is not enabled for this user");
+            }
+
+            var totp = new Totp(Base32Encoding.ToBytes(user.Secret));
+            var isValid = totp.VerifyTotp(request.Token, out _, VerificationWindow.RfcSpecifiedNetworkDelay);
+
+            if (isValid)
+            {
+                return Ok(new { status = "success", message = "Authentication successful" });
+            }
+            else
+            {
+                return Unauthorized(new { status = "fail", message = "Authentication failed" });
+            }
+        }
+
+        [HttpPost("has-2fa")]
+        public async Task<IActionResult> Has2FA([FromBody] Has2FaRequest request)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == 1);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            return Ok(new { status = "success", enabled = !string.IsNullOrEmpty(user.Secret) });
+        }
     }
 
     public class LoginRequest
     {
+        public bool Verify { get; set; } = false;
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }
@@ -349,5 +460,16 @@ namespace AceJobAgency.Controllers
     {
         public string CurrentPassword { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;
+    }
+    
+    public class Verify2FaRequest
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Token { get; set; } = string.Empty;
+    }
+    
+    public class Has2FaRequest
+    {
+        public string Email { get; set; }
     }
 }

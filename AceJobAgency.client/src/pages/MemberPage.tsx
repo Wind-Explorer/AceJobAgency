@@ -19,11 +19,22 @@ import remarkGfm from "remark-gfm";
 import { IconDownload, IconEdit, IconUpload } from "@tabler/icons-react";
 import { toast } from "react-toastify";
 import ChangePasswordView from "../components/ChangePasswordView";
+import Manage2FAView from "../components/Manage2FAView";
 
 export default function MemberPage() {
   const accessToken = getAccessToken();
   const navigate = useNavigate();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const {
+    isOpen: changePasswordModalIsOpen,
+    onOpen: changePasswordModalOnOpen,
+    onOpenChange: changePasswordModalOnOpenChange,
+  } = useDisclosure();
+
+  const {
+    isOpen: twoFactorAuthModalIsOpen,
+    onOpen: twoFactorAuthModalOnOpen,
+    onOpenChange: twoFactorAuthModalOnOpenChange,
+  } = useDisclosure();
 
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
@@ -185,19 +196,57 @@ export default function MemberPage() {
             <Button variant="light" color="danger" onPress={logout}>
               Log out
             </Button>
-            <Button variant="light" color="primary" onPress={onOpen}>
-              Change password
-            </Button>
+            <div className="flex flex-row gap-2">
+              <Button
+                variant="light"
+                color="primary"
+                onPress={twoFactorAuthModalOnOpen}
+              >
+                Manage 2FA
+              </Button>
+              <Button
+                variant="light"
+                color="primary"
+                onPress={changePasswordModalOnOpen}
+              >
+                Change password
+              </Button>
+            </div>
           </div>
         </Card>
       )}
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+      <Modal
+        isOpen={changePasswordModalIsOpen}
+        onOpenChange={changePasswordModalOnOpenChange}
+      >
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader />
               <ModalBody>
                 <ChangePasswordView onClose={onClose} />
+              </ModalBody>
+              <ModalFooter />
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={twoFactorAuthModalIsOpen}
+        onOpenChange={twoFactorAuthModalOnOpen}
+      >
+        <ModalContent>
+          {(on2FAClose) => (
+            <>
+              <ModalHeader />
+              <ModalBody>
+                {userProfile && (
+                  <Manage2FAView
+                    onClose={on2FAClose}
+                    userProfile={userProfile}
+                  />
+                )}
               </ModalBody>
               <ModalFooter />
             </>

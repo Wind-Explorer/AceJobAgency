@@ -65,5 +65,8 @@ namespace AceJobAgency.Entities
         [DataType(DataType.Password)]
         [MaxLength(128)]
         public string PreviousPassword2 { get; set; } = string.Empty;
+        
+        [MaxLength(128)]
+        public string? Secret { get; set; }
     }
 }

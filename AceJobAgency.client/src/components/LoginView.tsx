@@ -1,12 +1,36 @@
-import { Input, Checkbox, Button, Link } from "@heroui/react";
+import {
+  Input,
+  Checkbox,
+  Button,
+  Link,
+  useDisclosure,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+} from "@heroui/react";
 import { IconMail, IconLock } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import http, { login } from "../http";
+import TwoFactorAuthenticationModule from "./TwoFactorAuthenticationModule";
+
+export const checkTwoFactorStatus = async (email: string) => {
+  try {
+    const answer = await http.post("/User/has-2fa", {
+      email: email,
+    });
+    return answer.data.enabled as boolean;
+  } catch {
+    return false;
+  }
+};
 
 export default function LoginView({ onSignup }: { onSignup: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   const validateFields = () => {
     if (!email || !password) {
@@ -16,9 +40,22 @@ export default function LoginView({ onSignup }: { onSignup: () => void }) {
     return true;
   };
 
-  const handleLogin = async () => {
+  const checkFor2FA = async () => {
     if (!validateFields()) return;
+    checkTwoFactorStatus(email)
+      .then((answer) => {
+        if (answer) {
+          onOpen();
+        } else {
+          handleLogin();
+        }
+      })
+      .catch(() => {
+        toast.error("Something went wrong! Please try again.");
+      });
+  };
 
+  const handleLogin = async () => {
     const loginRequest = {
       email,
       password,
@@ -79,7 +116,7 @@ export default function LoginView({ onSignup }: { onSignup: () => void }) {
         </Link>
       </div>
       <div className="flex flex-col gap-4 w-full">
-        <Button color="primary" className="w-full" onPress={handleLogin}>
+        <Button color="primary" className="w-full" onPress={checkFor2FA}>
           Login
         </Button>
         <div className="flex flex-row gap-2 w-full justify-center *:my-auto">
@@ -89,6 +126,18 @@ export default function LoginView({ onSignup }: { onSignup: () => void }) {
           </Link>
         </div>
       </div>
+      <Modal size="lg" isOpen={isOpen} onOpenChange={onOpenChange}>
+        <ModalContent>
+          <ModalHeader>Two-Factor Authentication</ModalHeader>
+          <ModalBody>
+            <TwoFactorAuthenticationModule
+              email={email}
+              onTwoFactorSuccess={handleLogin}
+            />
+          </ModalBody>
+          <ModalFooter></ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }
